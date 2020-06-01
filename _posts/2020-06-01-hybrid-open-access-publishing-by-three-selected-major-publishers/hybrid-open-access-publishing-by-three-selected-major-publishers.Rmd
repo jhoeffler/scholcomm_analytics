@@ -1,0 +1,16 @@
+---
+title: "Hybrid Open Access Publishing by Three Selected Major Publishers"
+description: |
+  In this article we want to provide answers to several research questions related to the access in different databases of Hybrid Open Access Publications published by selected editorials, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications. 
+author:
+  - name: Jan H. Höffler
+    url: https://replication.uni-goettingen.de/
+date: 05-31-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
