@@ -1,7 +1,7 @@
 ---
 title: "Hybrid Open Access Publishing by Three Selected Major Publishers"
 description: |
-  In this article we want to provide answers to several research questions related to the access in different databases of Hybrid Open Access Publications published by selected editorials, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications. 
+  In this article we want to provide answers to several research questions related to what can be learned about hybrid open access publications based on information from the combination of different databases. A special focus lies on three selected publishers, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications. 
 author:
   - name: Jan H. Höffler (based on the pre-existing HOAD approach)
     url: https://replication.uni-goettingen.de/wiki/index.php/User:Jan_H._Höffler
@@ -64,7 +64,7 @@ unpaywall_df<-readr::read_csv('https://raw.githubusercontent.com/subugoe/hoad/20
 * Obtaining information about hybrid journals from the two datasets provided by the Open APC (Article Processing Charge) Initiative, a core dataset and a second one on transformative agreements. The datasets can be concatenated as they do not overlap.
 * Search for license data for determined journals in CrossRef
 * Use approach based on dissemin and others to determine open access from license data
-* Remove data about journals after[^4] they have turned to full open access in observation period using data from the Directory of Open Access Journals
+* Remove data about journals after they have turned to full open access in observation period using data from the Directory of Open Access Journals
 * Compare information with those provided about open access publications by Unpaywall
 
 [^1]: We thank Christoph Broschinski of the Department of Library Technology and Knowledge Management (LibTec) Bielefeld University for a detailed explanation of the Open APC datasets he oversees. For a correct citation of the dataset the release number needs to be included.
@@ -90,11 +90,11 @@ unpaywall_df<-readr::read_csv('https://raw.githubusercontent.com/subugoe/hoad/20
  |Publishers|548|
  |Hybrid Publishers|230|
 
-As for the data set of [Transformative Agreements](https://treemaps.intact-project.org/apcdata/transformative-agreements/#publisher/) it is possible to find 35,107 articles divided among 2,190 journals and from 15 different publishers[^4]. For SAGE Publications and Royal Society of Chemistry data about transformative agreements is available but no such agreements were found for Cambridge University Press. 
-
-[^4]: Total number of articles 142,382 of which are 79,020 hybrid. For journals and publishers need to check due to overlap. The numbers should be made reproducible once the release number of the dataset version is determined.
+As for the data set of [Transformative Agreements](https://treemaps.intact-project.org/apcdata/transformative-agreements/#publisher/) it is possible to find 35,107 articles divided among 2,190 journals and from 15 different publishers.[^4] For SAGE Publications and Royal Society of Chemistry data about transformative agreements is available but no such agreements were found for Cambridge University Press. 
 
 Using our [own](https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/oapc_hybrid.csv) combined dataset of hybrid publications we can count the number of unique journals published and unique license types used by every publisher.
+
+[^4]: Total number of articles 142,382 of which 79,020 are hybrid. For journals and publishers need to check due to overlap. The numbers should be made reproducible once the release number of the dataset version is determined.
 
 ```{r fig.width=9, fig.height=2 ,echo=TRUE,fig.keep='all'}
 library(dplyr)
@@ -748,7 +748,8 @@ datatable(CUPdf)
 Since the approach is based on data of the Open APC Initiative to which only certain institutions primarily from Europe contribute, coverage is limited. With the available data it is not possible to calculate what percentage of the literature is produced by these institutions, and as not even from all participating countries there is data for every year, we know that this is a restriction. What needs to be determined is even if there is only information on a small percentage of articles published, what percentage of hybrid journals per year does this already cover?  
 A second limitation that becomes apparent is contribution of data about open access licenses to CrossRef. As could be seen clearly in the case of SAGE Publications, coverage is very incomplete and delayed. The information can be complemented with data from Unpaywall. Already the Open APC data covered a significant part of hybrid journals of at least the Royal Society of Chemistry but the license information collected by Open APC is not normalized.
 While for Cambridge University Press the number of observations is steadil growing in the process of our data transformation, for Royal Society of Chemistry and SAGE Publications much information is lost in the process of matching the ISSNs obtained from Open APC to available CrossRef licenses for open access.
-A finer grained approach to see at which step of the data information the numbers of journals by the publishers is reduced in our data will help to determine the influence of delayed access licenses and journal transformations to full open access. As was seen with manual checks, data quality issues also play a role as in some cases ISSNs are not stored correctly and journals change names and publishers.[^6] 
-The number of different licenses used is steadily growing. Methods were already developed to harmonize license data and we can further contribute to improve on these approaches[^7]. While the continued introduction of new licenses will remain a challenge, we could show that even for some major publishers this number so far has stayed manageably low.
-[^6]: This will be difficult to show reproducibly. I would suggest a link to a list of examples.
-[^7]: The agrepl function can help to identify similar licenses. https://stackoverflow.com/questions/45510001/find-similar-strings-and-reconcile-them-within-one-dataframe
+A finer grained approach to see at which step of the data information the numbers of journals by the publishers is reduced in our data will help to determine the influence of delayed access licenses and journal transformations to full open access. As was seen with manual checks, data quality issues also play a role as in some cases ISSNs are not stored correctly and journals change names and publishers.[^5] 
+The number of different licenses used is steadily growing. Methods were already developed to harmonize license data and we can further contribute to improve on these approaches.[^6] While the continued introduction of new licenses will remain a challenge, we could show that even for some major publishers this number so far has stayed manageably low.
+
+[^5]: This will be difficult to show reproducibly. I would suggest a link to a list of examples.
+[^6]: The agrepl function can help to identify similar licenses. https://stackoverflow.com/questions/45510001/find-similar-strings-and-reconcile-them-within-one-dataframe
