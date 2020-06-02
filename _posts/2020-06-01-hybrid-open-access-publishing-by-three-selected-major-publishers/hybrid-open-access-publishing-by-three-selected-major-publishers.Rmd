@@ -3,9 +3,9 @@ title: "Hybrid Open Access Publishing by Three Selected Major Publishers"
 description: |
   In this article we want to provide answers to several research questions related to the access in different databases of Hybrid Open Access Publications published by selected editorials, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications. 
 author:
-  - name: Jan H. Höffler
-    url: https://replication.uni-goettingen.de/
-date: 05-31-2020
+  - name: Jan H. Höffler (based on the pre-existing HOAD approach)
+    url: https://replication.uni-goettingen.de/wiki/index.php/User:Jan_H._Höffler
+date: 06-02-2020
 output:
   distill::distill_article:
     self_contained: false
@@ -14,3 +14,741 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
+
+# Research Questions:
+
+* Of how many publishers, journals and articles can data about hybrid open access publications be obtained for the years 2013-2020? 
+* What percentage of publishing in academic journals occurs in the form of hybrid open access?
+* What are the limitations to determining this information?
+
+# Data Sources: 
+
+* [Open APC](https://github.com/OpenAPC/openapc-de)[^1]
+* [CrossRef](http://www.crossref.org/)
+* [Unpaywall](https://unpaywall.org/)[^2]
+* [Dissemin](https://dissem.in/)[^3] 
+* [oaDOI](https://oadoi.org)
+* [Directory of Open Access Journals (DOAJ)](https://doaj.org/) 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE,results='hide'}
+#Data from the Open APC Initiative
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyr)
+library(readr)
+library(DT)
+o_apc<-readr::read_csv('https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/oapc_hybrid.csv')
+#datatable(o_apc)
+
+#Data parsed from Crossref
+library(jsonlite)
+library(dplyr)
+#install.packages("tidyr")
+library(tidyr)
+
+jn_facets_df<-jsonlite::stream_in(url("https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/jn_facets_df.json"))
+
+jn_facets_df_unnested <- jn_facets_df %>%
+  select(journal_title, publisher, license_refs) %>%
+ tidyr::unnest(cols = c(license_refs))
+  
+hybrid_pub<-readr::read_csv('https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/hybrid_publications.csv')
+
+#Unpaywall data
+unpaywall_df<-readr::read_csv('https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/unpaywall_df.csv')
+
+```
+
+
+# Methods: 
+  
+* Obtaining information about hybrid journals from the two datasets provided by the Open APC (Article Processing Charge) Initiative, a core dataset and a second one on transformative agreements. The datasets can be concatenated as they do not overlap.
+* Search for license data for determined journals in CrossRef
+* Use approach based on dissemin and others to determine open access from license data
+* Remove data about journals after[^4] they have turned to full open access in observation period using data from the Directory of Open Access Journals
+* Compare information with those provided about open access publications by Unpaywall
+
+[^1]: We thank Christoph Broschinski of the Department of Library Technology and Knowledge Management (LibTec) Bielefeld University for a detailed explanation of the Open APC datasets he oversees. For a correct citation of the dataset the release number needs to be included.
+[^2]: Need to look up how to cite correctly.
+[^3]: The original list of CrossRef licenses that indicate open access can be found at https://github.com/dissemin/dissemin/blob/0aa00972eb13a6a59e1bc04b303cdcab9189406a/backend/crossref.py#L89
+
+  
+# Intermediate Results:
+
+## Open APC:
+  * Of how many publishers, journals and articles does Open APC provide data in total and of the three selected publishers, and how many of these are hybrid?
+ 
+  According to [APC](https://treemaps.intact-project.org/apcdata/openapc/#publisher), as of May 31, 2020, the following data is available:
+ 
+ <center> __Table 1:__ OpenAPC datasets</center>
+ 
+ |||
+ | :-: |:-:|
+ |Articles|107275|
+ |Hybrid Articles|43913|
+ |Journals|7157|
+ |Hybrid Journals|4866|
+ |Publishers|548|
+ |Hybrid Publishers|230|
+
+As for the data set of [Transformative Agreements](https://treemaps.intact-project.org/apcdata/transformative-agreements/#publisher/) it is possible to find 35,107 articles divided among 2,190 journals and from 15 different publishers[^4]. For SAGE Publications and Royal Society of Chemistry data about transformative agreements is available but no such agreements were found for Cambridge University Press. 
+
+[^4]: Total number of articles 142,382 of which are 79,020 hybrid. For journals and publishers need to check due to overlap. The numbers should be made reproducible once the release number of the dataset version is determined.
+
+Using our [own](https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/oapc_hybrid.csv) combined dataset of hybrid publications we can count the number of unique journals published and unique license types used by every publisher.
+
+```{r fig.width=9, fig.height=2 ,echo=TRUE,fig.keep='all'}
+library(dplyr)
+#Unique number of licenses and journals
+#Unique number of journals
+#Here distinct takes a data frame and returns one where if a row has the same 3 elements, it only appears once
+#Example: 2013, Springer, MIT_license only appears once
+journals<-o_apc %>% distinct(publisher, journal_full_title,period,.keep_all = TRUE)
+#xtabs creates a matrix which counts the number of cells that have a disctinct pair of column names
+#example, it counts all cells that have the pair springer, 2014
+unique_journal<-as.data.frame.matrix(xtabs(~ publisher+period,
+           data = journals))
+
+#Unique number of licenses
+license<-o_apc %>% distinct(publisher, license_ref,period,.keep_all = TRUE)
+unique_license<-as.data.frame.matrix(xtabs(~ publisher+period,
+           data = license))
+
+lic_jour<-unique_journal
+for (row in 1:nrow(unique_journal)){
+  for (col in 1:ncol(unique_journal)){
+    lic_jour[row,col]<-paste(unique_license[row,col],"/",unique_journal[row,col])
+  }
+}
+names<-data.frame(Publisher=row.names(lic_jour))
+  
+lic_jour2<-cbind(names,lic_jour)
+
+row.names(lic_jour2)<-NULL
+```
+
+<center> __Table 2:__ _Unique licenses/number of journals:_</center>
+
+```{r fig.width=9, fig.height=1 ,echo=TRUE,fig.keep='all'}
+datatable(lic_jour2, options = list(pageLength = 4))
+```
+
+### OAPC Hybrid data distribution across country and year:
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE, message=FALSE,warning=FALSE}
+library(plotly)
+XT=as.data.frame.matrix(xtabs(~ period+country,
+           data = o_apc));
+XT$Year<-row.names(XT);
+
+dist_country<-data.table::melt(XT, id.vars='Year') %>%
+plot_ly(x = ~Year, y = ~value, type = 'bar', 
+               name = ~variable, color = ~variable) %>%
+     layout(yaxis = list(title = 'Number of Articles'), barmode = 'stack')
+```
+
+<center> __Figure 1:__ _OAPC contribution by country_</center>
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE, message=FALSE,warning=FALSE}
+dist_country
+```
+
+
+As can be seen, most of the data comes from European institutions. Institutions from the country that has the biggest publication output, the United States, have not yet contributed much to the Open APC initiative, and China as country with the second highest publication output as well as all other non-European countries except for the US and Canada (which only contributed in 2013 and 2014) are not represented at all. For countries like Hungary, the Czech Republic or Norway there is only data for one or two years. Most data is contributed from the United Kingdom, followed by Austria, the Netherlands, and Sweden.
+
+#### Per selected publisher:
+
+To ease the display of information we merge the information belonging to those publishers not belonging to our selected list and categorize them as _"Other publishers"_
+
+```{r fig.width=4, fig.height=2 ,echo=TRUE ,warning=FALSE,fig.keep='all'}
+library(dplyr)
+
+#creating a vector and data frame of selected publishers
+SelectedPublishers<-c("Royal Society of Chemistry (RSC)", "Cambridge University Press (CUP)", "SAGE Publications");
+
+o_apc$publisher2 <- ifelse(o_apc$publisher=="Royal Society of Chemistry (RSC)", "Royal_Society_of_Chemistry_RSC",
+                           ifelse(o_apc$publisher=="Cambridge University Press (CUP)","Cambridge_University_Press_CUP",
+                                  ifelse(o_apc$publisher=="SAGE Publications","SAGE_Publications",
+                                         "Other")))
+
+#numbers of cases for each
+cases_sele_pub<-count(o_apc,publisher2)
+colnames(cases_sele_pub)<-c("Publisher","Frequency")
+Z<-cases_sele_pub$Publisher
+row.names(cases_sele_pub)<-NULL
+
+```
+
+##### Cases for selected publishers
+ <center> __Table 3:__ _Number of articles for selected publishers::_</center>
+
+```{r fig.width=4, fig.height=2 ,echo=TRUE ,warning=FALSE,fig.keep='all'}
+datatable(cases_sele_pub)
+```
+As can be seen, Cambridge University Press is the one of the three selected publishers of which most articles appear in the data, followed by Royal Society of Chemistry and SAGE Publications.
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE, fig.keep='all'}
+
+#Separating only selected publishers
+df1<-lic_jour[SelectedPublishers,]
+
+names<-data.frame(Publisher=row.names(df1))
+  
+df2<-cbind(names,df1)
+
+row.names(df2)<-NULL
+```
+##### Unique licenses and journals for selected publishers
+ <center> __Table 4:__ _Unique licenses/number of journals (selected publishers):_</center>
+```{r fig.width=9, fig.height=4 ,echo=TRUE, fig.keep='all'}
+datatable(df2, options = list(pageLength = 5))
+```
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE, message=FALSE,warning=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+XT=as.data.frame.matrix(xtabs(~ period+publisher2,
+           data = o_apc));
+XT$Year<-row.names(XT);
+
+p<-data.table::melt(XT, id.vars='Year') %>%
+plot_ly(x = ~Year, y = ~value, type = 'bar', 
+                name = ~variable, color = ~variable) %>%
+      layout(yaxis = list(title = 'Number of Articles'), barmode = 'stack',legend=list(orientation="h",y=-0.25, x=0.1))
+```
+
+##### Selected publishers contributions per year
+<center> __Figure 2:__ _OAPC contribution by selected publishers:_</center>
+
+```{r fig.width=9, fig.height=4 ,echo=FALSE, message=FALSE,warning=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+p
+```
+##### Royal Society of Chemistry (RSC) OAPC contributions by country:
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE,warning=FALSE,message=FALSE,fig.keep='all'}
+
+pub<-o_apc[o_apc$publisher2=='Royal_Society_of_Chemistry_RSC',]
+XT=as.data.frame.matrix(xtabs(~ period+country,
+           data = pub));
+XT$Year<-row.names(XT);
+
+p<-data.table::melt(XT, id.vars='Year') %>%
+plot_ly(x = ~Year, y = ~value, type = 'bar', 
+                name = ~variable, color = ~variable) %>%
+      layout(yaxis = list(title = 'Number of Articles'),
+             legend=list(orientation="v",y=0),barmode='stack')
+```
+<center> __Figure 3:__ _RSC OAPC contribution by country:_</center>
+```{r fig.width=9, fig.height=4 ,echo=FALSE,warning=FALSE,message=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+p
+```
+
+##### Cambridge University Press (CUP) OAPC contributions by country:
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE,warning=FALSE,message=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+
+pub<-o_apc[o_apc$publisher2=='Cambridge_University_Press_CUP',]
+XT=as.data.frame.matrix(xtabs(~ period+country,
+           data = pub));
+XT$Year<-row.names(XT);
+
+p<-data.table::melt(XT, id.vars='Year') %>%
+plot_ly(x = ~Year, y = ~value, type = 'bar', 
+                name = ~variable, color = ~variable) %>%
+      layout(yaxis = list(title = 'Number of Articles'),
+             legend=list(orientation="v",y=0),barmode='stack')
+```
+<center> __Figure 4:__ _CUP OAPC contribution by country:_</center>
+```{r fig.width=9, fig.height=4 ,echo=FALSE,warning=FALSE,message=FALSE,fig.keep='all'}
+p
+```
+
+##### SAGE Publications OAPC contributions by country:
+
+```{r fig.width=9, fig.height=4 ,echo=TRUE,warning=FALSE,message=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+
+pub<-o_apc[o_apc$publisher2=='SAGE_Publications',]
+XT=as.data.frame.matrix(xtabs(~ period+country,
+           data = pub));
+XT$Year<-row.names(XT);
+
+p<-data.table::melt(XT, id.vars='Year') %>%
+plot_ly(x = ~Year, y = ~value, type = 'bar', 
+                name = ~variable, color = ~variable) %>%
+      layout(yaxis = list(title = 'Number of Articles'),
+             legend=list(orientation="v",y=0),barmode='stack')
+```
+<center> __Figure 4:__ _SAGE OAPC contribution by country:_</center>
+```{r fig.width=9, fig.height=4 ,echo=FALSE,warning=FALSE,message=FALSE,fig.keep='all',layout="l-body-outset",fig.align='center'}
+p
+```
+
+## Number of articles per selected publishers
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+o_apc$publisher2 <- ifelse(o_apc$publisher=="Royal Society of Chemistry (RSC)", "Royal Society of Chemistry RSC",
+                           ifelse(o_apc$publisher=="Cambridge University Press (CUP)","Cambridge University Press CUP",
+                                  ifelse(o_apc$publisher=="SAGE Publications","SAGE Publications",
+                                         "Other")))
+hybrid_pub$publisher2 <- ifelse(hybrid_pub$publisher=="Royal Society of Chemistry (RSC)", "Royal Society of Chemistry RSC",
+                           ifelse(hybrid_pub$publisher=="Cambridge University Press (CUP)","Cambridge University Press CUP",
+                                  ifelse(hybrid_pub$publisher=="SAGE Publications","SAGE Publications",
+                                         "Other")))
+
+library(tidyr)
+library(dplyr)
+jn_facets_df_unnested <- jn_facets_df %>%
+      select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jn_facets_df_unnested$publisher2 <- ifelse(jn_facets_df_unnested$publisher=="Royal Society of Chemistry (RSC)", "Royal Society of Chemistry RSC",
+                           ifelse(jn_facets_df_unnested$publisher=="Cambridge University Press (CUP)","Cambridge University Press CUP",
+                                  ifelse(jn_facets_df_unnested$publisher=="SAGE Publications","SAGE Publications",
+                                         "Other")))
+
+#numbers of cases for each
+cases_sele_pub<-data.frame(count(o_apc,publisher2),count(hybrid_pub,publisher2),count(jn_facets_df_unnested,publisher2))
+cases_sele_pub$publisher2.1<-NULL
+cases_sele_pub$publisher2.2<-NULL
+colnames(cases_sele_pub)<-c("Publisher","oapc_hybrid","jn_facets_df","Hybrid_Publications")
+
+```
+##### Cases for selected publishers
+ <center> __Table X:__ _Number of cases for selected publishers::_</center>
+
+```{r fig.width=4, fig.height=2 ,echo=TRUE ,warning=FALSE,fig.keep='all'}
+library(DT)
+datatable(cases_sele_pub)
+```
+
+
+
+
+### Cummulative number of new licenses per year for all publishers:
+
+```{r}
+
+library(dplyr)
+#Number of new unique licenses per year (only keeps the first year a license appears)
+oapc_hybrid_licenses<-o_apc%>%distinct(license_ref,.keep_all = TRUE)
+# sums across rows
+XT1<-rowSums(as.data.frame.matrix(xtabs(~ period+license_ref,
+           data = oapc_hybrid_licenses)));
+
+#Takes column wise sum
+XT1<-cumsum(XT1)
+
+#Applying to hybrid publictions
+hybrid_licenses<-hybrid_pub%>%distinct(license_url,.keep_all = TRUE)
+XT2<-rowSums(as.data.frame.matrix(xtabs(~ issued+license_url,
+           data = hybrid_licenses)));
+XT2<-cumsum(XT2)
+
+#Applying to jn_facets
+library(tidyr)
+jn_facets_df_unnested <- jn_facets_df %>%
+      select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jnf_licenses<-jn_facets_df_unnested%>%distinct(license,.keep_all = TRUE)
+XT3<-rowSums(as.data.frame.matrix(xtabs(~ year+license,
+           data = jnf_licenses)));
+XT3<-cumsum(XT3)
+
+names<-c("Year","oapc_hybrid","jn_facets_df","Hybrid_Publications")
+
+Year<-c(2013,2014,2015,2016,2017,2018,2019,2020)
+X<-merge(data.frame(Year, row.names=NULL),data.frame(XT1, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT3, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT2, row.names=NULL), by = 0, all = TRUE)[-1]
+names(X)<-names
+
+
+for (row in 2:nrow(X)){
+  for (col in 2:ncol(X)){
+    if (is.na(X[row,col])) {
+      X[row,col]<-X[row-1,col]
+    }
+  }
+}
+```
+<center> __Table Y:__ _Number of licenses per year in the different datasets:_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+library(DT)
+datatable(X)
+```
+
+```{r warning=FALSE, message=FALSE, echo=TRUE,fig.height=8,fig.width=9}
+
+library(plotly)
+fig <- X
+fig <- fig %>% tidyr::gather(variable, value, -Year)
+fig <- fig %>% transform(id = as.integer(factor(variable)))
+fig <- fig %>% plot_ly(x = ~Year, y = ~value, color = ~variable, colors = "Dark2",
+          yaxis = ~paste0("y", id),type='bar')
+#fig <- fig %>% add_lines()
+fig <- fig %>% subplot(nrows = 3, shareX = TRUE)%>%
+      layout(yaxis = list(title = 'Number of Licenses'),legend=list(orientation="h",y=-0.15, x=0.25))
+```
+<center> __Figure X:__ _Number of licenses per year in the different datasets:_</center>
+```{r warning=FALSE, message=FALSE, echo=FALSE,fig.height=8,fig.width=9}
+fig
+```
+
+### Cummulative number of new licenses per year for SAGE Publications:
+
+```{r echo=FALSE}
+
+library(dplyr)
+px<-'SAGE Publications'
+#Number of new unique licenses per year (only keeps the first year a license appears)
+oapc_hybrid_licenses<-o_apc[o_apc$publisher==px,]%>%distinct(license_ref,.keep_all = TRUE)
+# sums across rows
+XT1<-rowSums(as.data.frame.matrix(xtabs(~ period+license_ref,
+           data = oapc_hybrid_licenses)));
+
+#Takes column wise sum
+XT1<-cumsum(XT1)
+
+#Applying to hybrid publictions
+hybrid_licenses<-hybrid_pub[hybrid_pub$publisher==px,]%>%distinct(license_url,.keep_all = TRUE)
+XT2<-rowSums(as.data.frame.matrix(xtabs(~ issued+license_url,
+           data = hybrid_licenses)));
+XT2<-cumsum(XT2)
+
+#Applying to jn_facets
+library(tidyr)
+jn_facets_df_unnested <- jn_facets_df[jn_facets_df$publisher==px,] %>%
+      select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jnf_licenses<-jn_facets_df_unnested%>%distinct(license,.keep_all = TRUE)
+XT3<-rowSums(as.data.frame.matrix(xtabs(~ year+license,
+           data = jnf_licenses)));
+XT3<-cumsum(XT3)
+
+names<-c("Year","oapc_hybrid","jn_facets_df","Hybrid_Publications")
+
+Year<-c(2013,2014,2015,2016,2017,2018,2019,2020)
+X<-merge(data.frame(Year, row.names=NULL),data.frame(XT1, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT3, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT2, row.names=NULL), by = 0, all = TRUE)[-1]
+names(X)<-names
+
+
+for (row in 2:nrow(X)){
+  for (col in 2:ncol(X)){
+    if (is.na(X[row,col])) {
+      X[row,col]<-X[row-1,col]
+    }
+  }
+}
+
+```
+<center> __Table X:__ _Number of licenses per year in the different datasets for SAGE:_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+library(DT)
+datatable(X)
+```
+
+```{r warning=FALSE, message=FALSE, echo=TRUE,fig.height=8,fig.width=9}
+
+library(plotly)
+fig <- X[1:5,]# We only plot until 2017 since there is no change in years afterwards
+fig <- fig %>% tidyr::gather(variable, value, -Year)
+fig <- fig %>% transform(id = as.integer(factor(variable)))
+fig <- fig %>% plot_ly(x = ~Year, y = ~value, color = ~variable, colors = "Dark2",
+          yaxis = ~paste0("y", id),type='bar')
+#fig <- fig %>% add_lines()
+fig <- fig %>% subplot(nrows = 3, shareX = TRUE)%>%
+      layout(yaxis = list(title = 'Number of Licenses'),legend=list(orientation="h",y=-0.15, x=0.25))
+```
+<center> __Figure X:__ _Number of licenses per year in the different datasets for SAGE:_</center>
+```{r warning=FALSE, message=FALSE, echo=FALSE,fig.height=8,fig.width=9}
+fig
+```
+
+### Cummulative number of new licenses per year for Cambridge University Press (CUP):
+
+```{r}
+
+library(dplyr)
+px<-'Cambridge University Press (CUP)'
+#Number of new unique licenses per year (only keeps the first year a license appears)
+oapc_hybrid_licenses<-o_apc[o_apc$publisher==px,]%>%distinct(license_ref,.keep_all = TRUE)
+# sums across rows
+XT1<-rowSums(as.data.frame.matrix(xtabs(~ period+license_ref,
+           data = oapc_hybrid_licenses)));
+
+#Takes column wise sum
+XT1<-cumsum(XT1)
+
+#Applying to hybrid publictions
+hybrid_licenses<-hybrid_pub[hybrid_pub$publisher==px,]%>%distinct(license_url,.keep_all = TRUE)
+XT2<-rowSums(as.data.frame.matrix(xtabs(~ issued+license_url,
+           data = hybrid_licenses)));
+XT2<-cumsum(XT2)
+
+#Applying to jn_facets
+library(tidyr)
+jn_facets_df_unnested <- jn_facets_df[jn_facets_df$publisher==px,] %>%
+      select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jnf_licenses<-jn_facets_df_unnested%>%distinct(license,.keep_all = TRUE)
+XT3<-rowSums(as.data.frame.matrix(xtabs(~ year+license,
+           data = jnf_licenses)));
+XT3<-cumsum(XT3)
+
+names<-c("Year","oapc_hybrid","jn_facets_df","Hybrid_Publications")
+
+Year<-c(2013,2014,2015,2016,2017,2018,2019,2020)
+X<-merge(data.frame(Year, row.names=NULL),data.frame(XT1, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT3, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT2, row.names=NULL), by = 0, all = TRUE)[-1]
+names(X)<-names
+
+
+for (row in 2:nrow(X)){
+  for (col in 2:ncol(X)){
+    if (is.na(X[row,col])) {
+      X[row,col]<-X[row-1,col]
+    }
+  }
+}
+```
+
+<center> __Table X:__ _Number of licenses per year in the different datasets for Cambridge University Press:_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+library(DT)
+datatable(X)
+```
+
+```{r warning=FALSE, message=FALSE, echo=TRUE,fig.height=8,fig.width=9}
+
+library(plotly)
+fig <- X[1:7,]# We only plot until 2019 since there is no change after
+fig <- fig %>% tidyr::gather(variable, value, -Year)
+fig <- fig %>% transform(id = as.integer(factor(variable)))
+fig <- fig %>% plot_ly(x = ~Year, y = ~value, color = ~variable, colors = "Dark2",
+          yaxis = ~paste0("y", id),type='bar')
+#fig <- fig %>% add_lines()
+fig <- fig %>% subplot(nrows = 3, shareX = TRUE)%>%
+      layout(yaxis = list(title = 'Number of Licenses'),legend=list(orientation="h",y=-0.15, x=0.25))
+```
+<center> __Figure X:__ _Number of licenses per year in the different datasets for Cambridge University Press:_</center>
+```{r warning=FALSE, message=FALSE, echo=FALSE,fig.height=8,fig.width=9}
+fig
+```
+
+### Cummulative number of new licenses per year for Royal Society of Chemistry (RSC):
+
+```{r}
+
+library(dplyr)
+px<-'Royal Society of Chemistry (RSC)'
+#Number of new unique licenses per year (only keeps the first year a license appears)
+oapc_hybrid_licenses<-o_apc[o_apc$publisher==px,]%>%distinct(license_ref,.keep_all = TRUE)
+# sums across rows
+XT1<-rowSums(as.data.frame.matrix(xtabs(~ period+license_ref,
+           data = oapc_hybrid_licenses)));
+
+#Takes column wise sum
+XT1<-cumsum(XT1)
+
+#Applying to hybrid publictions
+hybrid_licenses<-hybrid_pub[hybrid_pub$publisher==px,]%>%distinct(license_url,.keep_all = TRUE)
+XT2<-rowSums(as.data.frame.matrix(xtabs(~ issued+license_url,
+           data = hybrid_licenses)));
+XT2<-cumsum(XT2)
+
+#Applying to jn_facets
+library(tidyr)
+jn_facets_df_unnested <- jn_facets_df[jn_facets_df$publisher==px,] %>%
+      select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jnf_licenses<-jn_facets_df_unnested%>%distinct(license,.keep_all = TRUE)
+XT3<-rowSums(as.data.frame.matrix(xtabs(~ year+license,
+           data = jnf_licenses)));
+XT3<-cumsum(XT3)
+
+names<-c("Year","oapc_hybrid","jn_facets_df","Hybrid_Publications")
+
+Year<-c(2013,2014,2015,2016,2017,2018,2019,2020)
+X<-merge(data.frame(Year, row.names=NULL),data.frame(XT1, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT3, row.names=NULL), by = 0, all = TRUE)[-1]
+X<-merge(data.frame(X, row.names=NULL),data.frame(XT2, row.names=NULL), by = 0, all = TRUE)[-1]
+names(X)<-names
+
+
+for (row in 2:nrow(X)){
+  for (col in 2:ncol(X)){
+    if (is.na(X[row,col])) {
+      X[row,col]<-X[row-1,col]
+    }
+  }
+}
+```
+<center> __Table X:__ _Number of licenses per year in the different datasets for Royal Society of Chemistry:_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+library(DT)
+datatable(X)
+```
+
+```{r warning=FALSE, message=FALSE, echo=TRUE,fig.height=8,fig.width=9}
+
+library(plotly)
+fig <- X[1:5,]# We only plot until 2017 since there is no change
+fig <- fig %>% tidyr::gather(variable, value, -Year)
+fig <- fig %>% transform(id = as.integer(factor(variable)))
+fig <- fig %>% plot_ly(x = ~Year, y = ~value, color = ~variable, colors = "Dark2",
+          yaxis = ~paste0("y", id),type='bar')
+#fig <- fig %>% add_lines()
+fig <- fig %>% subplot(nrows = 3, shareX = TRUE)%>%
+      layout(yaxis = list(title = 'Number of Licenses'),legend=list(orientation="h",y=-0.15, x=0.25))
+```
+<center> __Figure X:__ _Number of licenses per year in the different datasets for Royal Society of Chemistry:_</center>
+```{r warning=FALSE, message=FALSE, echo=FALSE,fig.height=8,fig.width=9}
+fig
+```
+
+
+
+```{r}
+px1<-'Royal Society of Chemistry (RSC)'
+px2<-'Cambridge University Press (CUP)'
+px3<-'SAGE Publications'
+library(dplyr)
+#Number of new unique licenses per year (only keeps the first year a license appears)
+oapc_hybrid_licenses<-o_apc[o_apc$publisher==px1 | o_apc$publisher==px2 |o_apc$publisher==px3,]%>%distinct(license_ref,.keep_all = TRUE)
+oapc_hybrid_licenses<-select(oapc_hybrid_licenses,license_ref, publisher, period)
+titles<-c("License","Publisher","Year")
+names(oapc_hybrid_licenses)<-titles
+
+#Applying to hybrid publictions
+hybrid_licenses<-hybrid_pub[hybrid_pub$publisher==px1 | hybrid_pub$publisher==px2 |hybrid_pub$publisher==px3,]%>%distinct(license_url,.keep_all = TRUE)
+hybrid_licenses<-select(hybrid_licenses,license, publisher, issued)
+names(hybrid_licenses)<-titles
+#Applying to jn_facets
+library(tidyr)
+jn_facets_df_unnested <- jn_facets_df %>%
+        select(journal_title, publisher, license_refs,year_published) %>%
+      tidyr::unnest(cols = c(year_published))%>% 
+      rename(year = .id,V2=V1)
+
+jn_facets_df_unnested<-jn_facets_df_unnested%>%
+          tidyr::unnest(cols=c(license_refs))%>% 
+          rename(license = .id)
+
+jnf_licenses<-jn_facets_df_unnested[jn_facets_df_unnested$publisher==px1 | jn_facets_df_unnested$publisher==px2 |jn_facets_df_unnested$publisher==px3,]%>%distinct(license,.keep_all = TRUE)
+jnf_licenses<-select(jnf_licenses,license, publisher, year)
+names(jnf_licenses)<-titles
+```
+<center> __Table X:__ _List of licenses present in oapc_hybrid :_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE,fig.width=12}
+library(DT)
+datatable(oapc_hybrid_licenses)
+```
+<center> __Table X:__ _List of licenses present in jn_facets_df :_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE,fig.width=12}
+library(DT)
+datatable(jnf_licenses)
+```
+<center> __Table X:__ _List of licenses present in hybrid publications :_</center>
+```{r message=FALSE, echo=FALSE, warning=FALSE,fig.width=12}
+library(DT)
+datatable(hybrid_licenses)
+```
+
+
+## CrossRef:
+
+
+```{r warning=FALSE, message=FALSE, results='hide', fig.height=9,fig.width=12}
+
+#We want to analyze the number of journals and articles published by SAGE publications in the dataset
+#since the dataset is too big we have to reduce its size
+library(jsonlite)
+#since this file is too big to host it online, add the path where you store it locally
+
+pR<-"Royal Society of Chemistry (RSC)"
+pC<-"Cambridge University Press (CUP)"
+pS<-"SAGE Publications"
+
+
+hybrid_license_md<-jsonlite::stream_in(file("C:/Users/hoeffler3/Documents/Projektunterlagen/data/hybrid_license_md.json"))
+```
+```{r}
+hybrid_license_md<-hybrid_license_md[hybrid_license_md$publisher==pR|hybrid_license_md$publisher==pC|hybrid_license_md$publisher==pS,]
+
+
+SAGEdf<-hybrid_license_md[hybrid_license_md$publisher==pS,]
+
+#now we want to eliminate journal titles that are repeated
+#For the three publishers separately
+#In the case of SAGE Publications
+SAGEdf<-SAGEdf%>%distinct(container.title,.keep_all = TRUE)
+
+library(DT)
+datatable(SAGEdf)
+
+```
+As can be seen by ordering by the data the information was deposited, the license information was in some cases entered years after the publication and only for few articles. It can be deduced that the number of actual hybrid publicatins by SAGE Publications will be much higher than what can so far be shown in the dashboard.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+RSCdf<-hybrid_license_md[hybrid_license_md$publisher==pR,]
+
+#now we want to eliminate journal titles that are repeated for Royal Society of Chemistry
+
+RSCdf<-RSCdf%>%distinct(container.title,.keep_all = TRUE)
+
+library(DT)
+datatable(RSCdf)
+
+
+```
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+CUPdf<-hybrid_license_md[hybrid_license_md$publisher==pC,]
+
+#now we want to eliminate journal titles that are repeated
+
+CUPdf<-CUPdf%>%distinct(container.title,.keep_all = TRUE)
+
+library(DT)
+datatable(CUPdf)
+
+
+```
+## How many journals and articles are removed due to the comparison with the Directory of Open Access Journals?
+1 journal with 3 articles by SAGE Publications, the Journal of Experimental Psychopathology, 480 articles by Cambridge University Press, and 731 by Royal Society of Chemistry (RSC) were identified as flipped to full open access. https://raw.githubusercontent.com/subugoe/hoad/2020_update/data/flipped_jns_doaj.csv
+
+## Summary
+Since the approach is based on data of the Open APC Initiative to which only certain institutions primarily from Europe contribute, coverage is limited. With the available data it is not possible to calculate what percentage of the literature is produced by these institutions, and as not even from all participating countries there is data for every year, we know that this is a restriction. What needs to be determined is even if there is only information on a small percentage of articles published, what percentage of hybrid journals per year does this already cover?  
+A second limitation that becomes apparent is contribution of data about open access licenses to CrossRef. As could be seen clearly in the case of SAGE Publications, coverage is very incomplete and delayed. The information can be complemented with data from Unpaywall. Already the Open APC data covered a significant part of hybrid journals of at least the Royal Society of Chemistry but the license information collected by Open APC is not normalized.
+While for Cambridge University Press the number of observations is steadil growing in the process of our data transformation, for Royal Society of Chemistry and SAGE Publications much information is lost in the process of matching the ISSNs obtained from Open APC to available CrossRef licenses for open access.
+A finer grained approach to see at which step of the data information the numbers of journals by the publishers is reduced in our data will help to determine the influence of delayed access licenses and journal transformations to full open access. As was seen with manual checks, data quality issues also play a role as in some cases ISSNs are not stored correctly and journals change names and publishers.[^6] 
+The number of different licenses used is steadily growing. Methods were already developed to harmonize license data and we can further contribute to improve on these approaches[^7]. While the continued introduction of new licenses will remain a challenge, we could show that even for some major publishers this number so far has stayed manageably low.
+[^6]: This will be difficult to show reproducibly. I would suggest a link to a list of examples.
+[^7]: The agrepl function can help to identify similar licenses. https://stackoverflow.com/questions/45510001/find-similar-strings-and-reconcile-them-within-one-dataframe

@@ -11,14 +11,22 @@ to publish case-studies rapidely showing how to support data-driven workflows an
 decision-making around scholarly communication in libraries using R.
 </description>
     <generator>Distill</generator>
-    <lastBuildDate>Sat, 30 May 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 01 Jun 2020 00:00:00 +0000</lastBuildDate>
     <item>
       <title>Hybrid Open Access Publishing by Three Selected Major Publishers</title>
-      <dc:creator>Jan H. Höffler</dc:creator>
+      <dc:creator>Jan H. Höffler (based on the pre-existing HOAD approach)</dc:creator>
       <link>https://subugoe.github.io/scholcomm_analytics/posts/2020-06-01-hybrid-open-access-publishing-by-three-selected-major-publishers</link>
       <description>In this article we want to provide answers to several research questions related to the access in different databases of Hybrid Open Access Publications published by selected editorials, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications.</description>
       <guid>https://subugoe.github.io/scholcomm_analytics/posts/2020-06-01-hybrid-open-access-publishing-by-three-selected-major-publishers</guid>
-      <pubDate>Sat, 30 May 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jun 2020 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Some Notes on Improving the Dashboard</title>
+      <dc:creator>Jan H. Höffler</dc:creator>
+      <link>https://subugoe.github.io/scholcomm_analytics/posts/2020-06-01-improving-the-dashboard</link>
+      <description>Issues that arose when working on the dashboard and that will help to improve it.</description>
+      <guid>https://subugoe.github.io/scholcomm_analytics/posts/2020-06-01-improving-the-dashboard</guid>
+      <pubDate>Mon, 01 Jun 2020 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Exploring the Open Access Evidence base in Unpaywall with Python</title>

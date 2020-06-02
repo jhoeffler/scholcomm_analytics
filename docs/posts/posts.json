@@ -5,14 +5,29 @@
     "description": "In this article we want to provide answers to several research questions related to the access in different databases of Hybrid Open Access Publications published by selected editorials, namely: Royal Society of Chemistry (RSC), Cambridge University Press (CUP) and SAGE Publications.",
     "author": [
       {
-        "name": "Jan H. Höffler",
-        "url": "https://replication.uni-goettingen.de/"
+        "name": "Jan H. Höffler (based on the pre-existing HOAD approach)",
+        "url": "https://replication.uni-goettingen.de/wiki/index.php/User:Jan_H._Höffler"
       }
     ],
-    "date": "2020-05-31",
+    "date": "2020-06-02",
     "categories": [],
     "preview": {},
-    "last_modified": "2020-06-01T10:11:08+02:00"
+    "last_modified": "2020-06-02T03:49:16+02:00"
+  },
+  {
+    "path": "posts/2020-06-01-improving-the-dashboard/",
+    "title": "Some Notes on Improving the Dashboard",
+    "description": "Issues that arose when working on the dashboard and that will help to improve it.",
+    "author": [
+      {
+        "name": "Jan H. Höffler",
+        "url": "https://replication.uni-goettingen.de/wiki/index.php/User:Jan_H._Höffler"
+      }
+    ],
+    "date": "2020-06-01",
+    "categories": [],
+    "preview": {},
+    "last_modified": "2020-06-02T01:33:30+02:00"
   },
   {
     "path": "posts/unpaywall_python/",

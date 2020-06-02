@@ -1,0 +1,43 @@
+---
+title: "Some Notes on Improving the Dashboard"
+description: |
+  Issues that arose when working on the dashboard and that will help to improve it. 
+author:
+  - name: Jan H. Höffler
+    url: https://replication.uni-goettingen.de/wiki/index.php/User:Jan_H._Höffler
+date: 06-01-2020
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Additional libraries that had to be installed to make it run:
+
+* flexdashboard
+* writexl
+* viridis
+
+# Reasons why previous versions show different data or didn't work
+The refactored dashboard version at https://subugoe.github.io/hoad/articles/interactive.html is based on data from around end of 2019, that's why SAGE publications cannot be selected, there was still no open access license data for it in the CrossRef database.
+
+The version available at https://subugoe.shinyapps.io/hybridoa/ seems to be based on data from update_jan_feb_20, when there was still very little data on SAGE open access licenses in the CrossRef database. 
+
+Just replacing hybrid_publications.csv in the refactored dashboard version with the jan_feb_20 update stored at https://github.com/subugoe/hoad/blob/update_jan_feb_20/data/hybrid_publications.csv?raw=true does not work (Max mentioned he could not reproduce the dashboard with that data version) as the columns domain and suffix are missing that are needed for the dashboard. Adding just empty columns for them allows to run the dashboard but with an error. 
+
+Updating the dashboard with the April 2020 data available at https://github.com/subugoe/hoad/blob/2020_update/data/hybrid_publications.csv?raw=true shows more SAGE journals as licenses indicating open access also for previous years were deposited to CrossRef only after February 2020.
+
+# Technical issues
+* The years do not show in the graph for "Other types of OA license information detected by Unpaywall".
+* Readme.Rmd missing in master branch
+* Readme.md starts with a list of links with broken format
+
+# List of used datasets is incomplete
+* For example, [Unpaywall](https://unpaywall.org/), Dissemin missing in data description at https://github.com/subugoe/hoad/blob/2020_update/data/README.Rmd
+
+# "Methods
+follow the Wickham-Grolemund approach to practice data science". The impression should be avoided that a book on how to use certain tools is misunderstood as a method.
+https://github.com/subugoe/hoad/blob/master/vignettes/about.Rmd
